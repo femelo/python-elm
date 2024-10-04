@@ -1,4 +1,4 @@
-#-*- coding: utf8
+# -*- coding: utf8
 # Author: David C. Lambert [dcl -at- panix -dot- com]
 # Copyright(c) 2013
 # License: Simple BSD
@@ -24,15 +24,16 @@ import scipy.sparse as sp
 from scipy.spatial.distance import cdist, pdist, squareform
 
 from sklearn.metrics import pairwise_distances
-from sklearn.utils import check_random_state, atleast2d_or_csr
+from sklearn.utils import check_random_state, check_array
 from sklearn.utils.extmath import safe_sparse_dot
 from sklearn.base import BaseEstimator, TransformerMixin
 
-__all__ = ['RandomLayer',
-           'MLPRandomLayer',
-           'RBFRandomLayer',
-           'GRBFRandomLayer',
-           ]
+__all__ = [
+    'RandomLayer',
+    'MLPRandomLayer',
+    'RBFRandomLayer',
+    'GRBFRandomLayer',
+]
 
 
 class BaseRandomLayer(BaseEstimator, TransformerMixin):
@@ -48,8 +49,10 @@ class BaseRandomLayer(BaseEstimator, TransformerMixin):
 
     # take n_hidden and random_state, init components_ and
     # input_activations_
-    def __init__(self, n_hidden=20, random_state=0, activation_func=None,
-                 activation_args=None):
+    def __init__(
+        self, n_hidden=20, random_state=0, activation_func=None,
+        activation_args=None
+    ):
 
         self.n_hidden = n_hidden
         self.random_state = random_state
@@ -108,7 +111,7 @@ class BaseRandomLayer(BaseEstimator, TransformerMixin):
         -------
         self
         """
-        X = atleast2d_or_csr(X)
+        X = check_array(X)
 
         self._generate_components(X)
 
@@ -130,7 +133,7 @@ class BaseRandomLayer(BaseEstimator, TransformerMixin):
         -------
         X_new : numpy array of shape [n_samples, n_components]
         """
-        X = atleast2d_or_csr(X)
+        X = check_array(X)
 
         if (self.components_ is None):
             raise ValueError('No components initialized')
@@ -147,18 +150,18 @@ class RandomLayer(BaseRandomLayer):
     that are a weighted combination of dot product (multilayer perceptron)
     and distance (rbf) activations:
 
-      input_activation = alpha * mlp_activation + (1-alpha) * rbf_activation
+    input_activation = alpha * mlp_activation + (1-alpha) * rbf_activation
 
-      mlp_activation(x) = dot(x, weights) + bias
-      rbf_activation(x) = rbf_width * ||x - center||/radius
+    mlp_activation(x) = dot(x, weights) + bias
+    rbf_activation(x) = rbf_width * ||x - center||/radius
 
-      alpha and rbf_width are specified by the user
+    alpha and rbf_width are specified by the user
 
-      weights and biases are taken from normal distribution of
-      mean 0 and sd of 1
+    weights and biases are taken from normal distribution of
+    mean 0 and sd of 1
 
-      centers are taken uniformly from the bounding hyperrectangle
-      of the inputs, and radii are max(||x-c||)/sqrt(n_centers*2)
+    centers are taken uniformly from the bounding hyperrectangle
+    of the inputs, and radii are max(||x-c||)/sqrt(n_centers*2)
 
     The input activation is transformed by a transfer function that defaults
     to numpy.tanh if not specified, but can be any callable that returns an
@@ -182,10 +185,10 @@ class RandomLayer(BaseRandomLayer):
     `user_components`: dictionary, optional (default=None)
         dictionary containing values for components that woud otherwise be
         randomly generated.  Valid key/value pairs are as follows:
-           'radii'  : array-like of shape [n_hidden]
-           'centers': array-like of shape [n_hidden, n_features]
-           'biases' : array-like of shape [n_hidden]
-           'weights': array-like of shape [n_features, n_hidden]
+            'radii'  : array-like of shape [n_hidden]
+            'centers': array-like of shape [n_hidden, n_features]
+            'biases' : array-like of shape [n_hidden]
+            'weights': array-like of shape [n_features, n_hidden]
 
     `activation_func` : {callable, string} optional (default='tanh')
         Function used to transform input activation
@@ -234,34 +237,43 @@ class RandomLayer(BaseRandomLayer):
     _gaussian = (lambda x: np.exp(-pow(x, 2.0)))
 
     # multiquadric RBF
-    _multiquadric = (lambda x:
-                     np.sqrt(1.0 + pow(x, 2.0)))
+    _multiquadric = (
+        lambda x:
+        np.sqrt(1.0 + pow(x, 2.0))
+    )
 
     # inverse multiquadric RBF
-    _inv_multiquadric = (lambda x:
-                         1.0/(np.sqrt(1.0 + pow(x, 2.0))))
+    _inv_multiquadric = (
+        lambda x:
+        1.0 / (np.sqrt(1.0 + pow(x, 2.0)))
+    )
 
     # internal activation function table
-    _internal_activation_funcs = {'sine': np.sin,
-                                  'tanh': np.tanh,
-                                  'tribas': _tribas,
-                                  'inv_tribas': _inv_tribas,
-                                  'sigmoid': _sigmoid,
-                                  'softlim': _softlim,
-                                  'hardlim': _hardlim,
-                                  'gaussian': _gaussian,
-                                  'multiquadric': _multiquadric,
-                                  'inv_multiquadric': _inv_multiquadric,
-                                  }
+    _internal_activation_funcs = {
+        'sine': np.sin,
+        'tanh': np.tanh,
+        'tribas': _tribas,
+        'inv_tribas': _inv_tribas,
+        'sigmoid': _sigmoid,
+        'softlim': _softlim,
+        'hardlim': _hardlim,
+        'gaussian': _gaussian,
+        'multiquadric': _multiquadric,
+        'inv_multiquadric': _inv_multiquadric,
+    }
 
-    def __init__(self, n_hidden=20, alpha=0.5, random_state=None,
-                 activation_func='tanh', activation_args=None,
-                 user_components=None, rbf_width=1.0):
+    def __init__(
+        self, n_hidden=20, alpha=0.5, random_state=None,
+        activation_func='tanh', activation_args=None,
+        user_components=None, rbf_width=1.0
+    ):
 
-        super(RandomLayer, self).__init__(n_hidden=n_hidden,
-                                          random_state=random_state,
-                                          activation_func=activation_func,
-                                          activation_args=activation_args)
+        super(RandomLayer, self).__init__(
+            n_hidden=n_hidden,
+            random_state=random_state,
+            activation_func=activation_func,
+            activation_args=activation_args
+        )
 
         if (isinstance(self.activation_func, str)):
             func_names = self._internal_activation_funcs.keys()
@@ -311,15 +323,15 @@ class RandomLayer(BaseRandomLayer):
             n_features = X.shape[1]
 
             if (sparse):
-                fxr = xrange(n_features)
+                fxr = np.arange(n_features)
                 cols = [X.getcol(i) for i in fxr]
 
                 min_dtype = X.dtype.type(1.0e10)
-                sp_min = lambda col: np.minimum(min_dtype, np.min(col.data))
+                sp_min = (lambda col: np.minimum(min_dtype, np.min(col.data)))
                 min_Xs = np.array(map(sp_min, cols))
 
                 max_dtype = X.dtype.type(-1.0e10)
-                sp_max = lambda col: np.maximum(max_dtype, np.max(col.data))
+                sp_max = (lambda col: np.maximum(max_dtype, np.max(col.data)))
                 max_Xs = np.array(map(sp_max, cols))
             else:
                 min_Xs = X.min(axis=0)
@@ -391,35 +403,43 @@ class MLPRandomLayer(RandomLayer):
     """Wrapper for RandomLayer with alpha (mixing coefficient) set
        to 1.0 for MLP activations only"""
 
-    def __init__(self, n_hidden=20, random_state=None,
-                 activation_func='tanh', activation_args=None,
-                 weights=None, biases=None):
+    def __init__(
+        self, n_hidden=20, random_state=None,
+        activation_func='tanh', activation_args=None,
+        weights=None, biases=None
+    ):
 
         user_components = {'weights': weights, 'biases': biases}
-        super(MLPRandomLayer, self).__init__(n_hidden=n_hidden,
-                                             random_state=random_state,
-                                             activation_func=activation_func,
-                                             activation_args=activation_args,
-                                             user_components=user_components,
-                                             alpha=1.0)
+        super(MLPRandomLayer, self).__init__(
+            n_hidden=n_hidden,
+            random_state=random_state,
+            activation_func=activation_func,
+            activation_args=activation_args,
+            user_components=user_components,
+            alpha=1.0
+        )
 
 
 class RBFRandomLayer(RandomLayer):
     """Wrapper for RandomLayer with alpha (mixing coefficient) set
        to 0.0 for RBF activations only"""
 
-    def __init__(self, n_hidden=20, random_state=None,
-                 activation_func='gaussian', activation_args=None,
-                 centers=None, radii=None, rbf_width=1.0):
+    def __init__(
+        self, n_hidden=20, random_state=None,
+        activation_func='gaussian', activation_args=None,
+        centers=None, radii=None, rbf_width=1.0
+    ):
 
         user_components = {'centers': centers, 'radii': radii}
-        super(RBFRandomLayer, self).__init__(n_hidden=n_hidden,
-                                             random_state=random_state,
-                                             activation_func=activation_func,
-                                             activation_args=activation_args,
-                                             user_components=user_components,
-                                             rbf_width=rbf_width,
-                                             alpha=0.0)
+        super(RBFRandomLayer, self).__init__(
+            n_hidden=n_hidden,
+            random_state=random_state,
+            activation_func=activation_func,
+            activation_args=activation_args,
+            user_components=user_components,
+            rbf_width=rbf_width,
+            alpha=0.0
+        )
 
 
 class GRBFRandomLayer(RBFRandomLayer):
@@ -427,7 +447,7 @@ class GRBFRandomLayer(RBFRandomLayer):
 
     Creates a layer of radial basis function units where:
 
-       f(a), s.t. a = ||x-c||/r
+    f(a), s.t. a = ||x-c|| / r
 
     with c the unit center
     and f() is exp(-gamma * a^tau) where tau and r are computed
@@ -475,8 +495,8 @@ class GRBFRandomLayer(RBFRandomLayer):
     References
     ----------
     .. [1] Fernandez-Navarro, et al, "MELM-GRBF: a modified version of the
-              extreme learning machine for generalized radial basis function
-              neural networks", Neurocomputing 74 (2011), 2502-2510
+        extreme learning machine for generalized radial basis function
+        neural networks", Neurocomputing 74 (2011), 2502-2510
 
     """
     # def _grbf(acts, taus):
@@ -488,13 +508,17 @@ class GRBFRandomLayer(RBFRandomLayer):
 
     _internal_activation_funcs = {'grbf': _grbf}
 
-    def __init__(self, n_hidden=20, grbf_lambda=0.001,
-                 centers=None, radii=None, random_state=None):
+    def __init__(
+        self, n_hidden=20, grbf_lambda=0.001,
+        centers=None, radii=None, random_state=None
+    ):
 
-        super(GRBFRandomLayer, self).__init__(n_hidden=n_hidden,
-                                              activation_func='grbf',
-                                              centers=centers, radii=radii,
-                                              random_state=random_state)
+        super(GRBFRandomLayer, self).__init__(
+            n_hidden=n_hidden,
+            activation_func='grbf',
+            centers=centers, radii=radii,
+            random_state=random_state
+        )
 
         self.grbf_lambda = grbf_lambda
         self.dN_vals = None
@@ -512,7 +536,7 @@ class GRBFRandomLayer(RBFRandomLayer):
         sorted_distances = np.sort(squareform(pdist(centers)))
         self.dF_vals = sorted_distances[:, -1]
         self.dN_vals = sorted_distances[:, 1]/100.0
-        #self.dN_vals = 0.0002 * np.ones(self.dF_vals.shape)
+        # self.dN_vals = 0.0002 * np.ones(self.dF_vals.shape)
 
         tauNum = np.log(np.log(self.grbf_lambda) /
                         np.log(1.0 - self.grbf_lambda))

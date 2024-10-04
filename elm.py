@@ -17,26 +17,26 @@ References
 ----------
 .. [1] http://www.extreme-learning-machines.org
 .. [2] G.-B. Huang, Q.-Y. Zhu and C.-K. Siew, "Extreme Learning Machine:
-          Theory and Applications", Neurocomputing, vol. 70, pp. 489-501,
-          2006.
+    Theory and Applications", Neurocomputing, vol. 70, pp. 489-501, 2006.
 """
 
 from abc import ABCMeta, abstractmethod
 
 import numpy as np
-from scipy.linalg import pinv2
+from scipy.linalg import pinv
 
 from sklearn.utils import as_float_array
 from sklearn.utils.extmath import safe_sparse_dot
 from sklearn.base import BaseEstimator, ClassifierMixin, RegressorMixin
 from sklearn.preprocessing import LabelBinarizer
+from random_layer import MLPRandomLayer, RandomLayer
 
-from random_layer import RandomLayer, MLPRandomLayer
-
-__all__ = ["ELMRegressor",
-           "ELMClassifier",
-           "GenELMRegressor",
-           "GenELMClassifier"]
+__all__ = [
+    "ELMRegressor",
+    "ELMClassifier",
+    "GenELMRegressor",
+    "GenELMClassifier"
+]
 
 
 # BaseELM class, regressor and hidden_layer attributes
@@ -130,13 +130,14 @@ class GenELMRegressor(BaseELM, RegressorMixin):
     ----------
     .. [1] http://www.extreme-learning-machines.org
     .. [2] G.-B. Huang, Q.-Y. Zhu and C.-K. Siew, "Extreme Learning Machine:
-          Theory and Applications", Neurocomputing, vol. 70, pp. 489-501,
-              2006.
+        Theory and Applications", Neurocomputing, vol. 70, pp. 489-501, 2006.
     """
 
-    def __init__(self,
-                 hidden_layer=MLPRandomLayer(random_state=0),
-                 regressor=None):
+    def __init__(
+        self,
+        hidden_layer=MLPRandomLayer(random_state=0),
+        regressor=None
+    ):
 
         super(GenELMRegressor, self).__init__(hidden_layer, regressor)
 
@@ -150,8 +151,10 @@ class GenELMRegressor(BaseELM, RegressorMixin):
         or supplied regressor
         """
         if (self.regressor is None):
-            self.coefs_ = safe_sparse_dot(pinv2(self.hidden_activations_), y)
+            self.coefs_ = safe_sparse_dot(pinv(self.hidden_activations_), y)
         else:
+            if len(y.shape) > 1 and y.shape[1] == 1:
+                y = y.ravel()
             self.regressor.fit(self.hidden_activations_, y)
 
         self.fitted_ = True
@@ -233,7 +236,7 @@ class GenELMClassifier(BaseELM, ClassifierMixin):
         (default=MLPRandomLayer(random_state=0))
 
     `binarizer` : LabelBinarizer, optional
-        (default=LabelBinarizer(-1, 1))
+        (default=LabelBinarizer(neg_label=-1, pos_label=1))
 
     `regressor`    : regressor instance, optional (default=None)
         If provided, this object is used to perform the regression from hidden
@@ -256,13 +259,14 @@ class GenELMClassifier(BaseELM, ClassifierMixin):
     ----------
     .. [1] http://www.extreme-learning-machines.org
     .. [2] G.-B. Huang, Q.-Y. Zhu and C.-K. Siew, "Extreme Learning Machine:
-              Theory and Applications", Neurocomputing, vol. 70, pp. 489-501,
-              2006.
+        Theory and Applications", Neurocomputing, vol. 70, pp. 489-501, 2006.
     """
-    def __init__(self,
-                 hidden_layer=MLPRandomLayer(random_state=0),
-                 binarizer=LabelBinarizer(-1, 1),
-                 regressor=None):
+    def __init__(
+        self,
+        hidden_layer=MLPRandomLayer(random_state=0),
+        binarizer=LabelBinarizer(neg_label=-1, pos_label=1),
+        regressor=None,
+    ):
 
         super(GenELMClassifier, self).__init__(hidden_layer, regressor)
 
@@ -401,13 +405,15 @@ class ELMRegressor(BaseEstimator, RegressorMixin):
     ----------
     .. [1] http://www.extreme-learning-machines.org
     .. [2] G.-B. Huang, Q.-Y. Zhu and C.-K. Siew, "Extreme Learning Machine:
-          Theory and Applications", Neurocomputing, vol. 70, pp. 489-501,
-              2006.
+        Theory and Applications", Neurocomputing, vol. 70, pp. 489-501,
+        2006.
     """
 
-    def __init__(self, n_hidden=20, alpha=0.5, rbf_width=1.0,
-                 activation_func='tanh', activation_args=None,
-                 user_components=None, regressor=None, random_state=None):
+    def __init__(
+        self, n_hidden=20, alpha=0.5, rbf_width=1.0,
+        activation_func='tanh', activation_args=None,
+        user_components=None, regressor=None, random_state=None
+    ):
 
         self.n_hidden = n_hidden
         self.alpha = alpha
@@ -423,12 +429,14 @@ class ELMRegressor(BaseEstimator, RegressorMixin):
     def _create_random_layer(self):
         """Pass init params to RandomLayer"""
 
-        return RandomLayer(n_hidden=self.n_hidden,
-                           alpha=self.alpha, random_state=self.random_state,
-                           activation_func=self.activation_func,
-                           activation_args=self.activation_args,
-                           user_components=self.user_components,
-                           rbf_width=self.rbf_width)
+        return RandomLayer(
+            n_hidden=self.n_hidden,
+            alpha=self.alpha, random_state=self.random_state,
+            activation_func=self.activation_func,
+            activation_args=self.activation_args,
+            user_components=self.user_components,
+            rbf_width=self.rbf_width
+        )
 
     def fit(self, X, y):
         """
@@ -451,8 +459,10 @@ class ELMRegressor(BaseEstimator, RegressorMixin):
             Returns an instance of self.
         """
         rhl = self._create_random_layer()
-        self._genelm_regressor = GenELMRegressor(hidden_layer=rhl,
-                                                 regressor=self.regressor)
+        self._genelm_regressor = GenELMRegressor(
+            hidden_layer=rhl,
+            regressor=self.regressor
+        )
         self._genelm_regressor.fit(X, y)
         return self
 
@@ -525,24 +535,27 @@ class ELMClassifier(ELMRegressor):
     ----------
     .. [1] http://www.extreme-learning-machines.org
     .. [2] G.-B. Huang, Q.-Y. Zhu and C.-K. Siew, "Extreme Learning Machine:
-          Theory and Applications", Neurocomputing, vol. 70, pp. 489-501,
-              2006.
+        Theory and Applications", Neurocomputing, vol. 70, pp. 489-501, 2006.
     """
 
-    def __init__(self, n_hidden=20, alpha=0.5, rbf_width=1.0,
-                 activation_func='tanh', activation_args=None,
-                 user_components=None, regressor=None,
-                 binarizer=LabelBinarizer(-1, 1),
-                 random_state=None):
+    def __init__(
+        self, n_hidden=20, alpha=0.5, rbf_width=1.0,
+        activation_func='tanh', activation_args=None,
+        user_components=None, regressor=None,
+        binarizer=LabelBinarizer(neg_label=-1, pos_label=1),
+        random_state=None
+    ):
 
-        super(ELMClassifier, self).__init__(n_hidden=n_hidden,
-                                            alpha=alpha,
-                                            random_state=random_state,
-                                            activation_func=activation_func,
-                                            activation_args=activation_args,
-                                            user_components=user_components,
-                                            rbf_width=rbf_width,
-                                            regressor=regressor)
+        super(ELMClassifier, self).__init__(
+            n_hidden=n_hidden,
+            alpha=alpha,
+            random_state=random_state,
+            activation_func=activation_func,
+            activation_args=activation_args,
+            user_components=user_components,
+            rbf_width=rbf_width,
+            regressor=regressor
+        )
 
         self.classes_ = None
         self.binarizer = binarizer
