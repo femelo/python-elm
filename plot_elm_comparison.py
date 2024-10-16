@@ -71,6 +71,8 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 
+from sklearn.calibration import CalibratedClassifierCV
+
 from elm import GenELMClassifier
 from random_layer import RBFRandomLayer, MLPRandomLayer
 
@@ -132,7 +134,7 @@ def make_datasets():
     ]
 
 
-def make_classifiers():
+def make_classifiers(calibrated: bool):
 
     names = [
         "ELM(10, tanh)", "ELM(10, tanh, LR)", "ELM(10, sinsq)",
@@ -165,6 +167,10 @@ def make_classifiers():
         GenELMClassifier(hidden_layer=srhl_hardlim),
         GenELMClassifier(hidden_layer=srhl_rbf)
     ]
+    if calibrated:
+        classifiers = list(
+            map(lambda clf: CalibratedClassifierCV(clf), classifiers)
+        )
 
     return names, classifiers
 
@@ -182,8 +188,9 @@ def make_linearly_separable():
 
 ###############################################################################
 
+calibrated = True
 datasets = make_datasets()
-names, classifiers = make_classifiers()
+names, classifiers = make_classifiers(calibrated)
 
 i = 1
 figure = pl.figure(figsize=(18, 9))
@@ -213,7 +220,10 @@ for ds in datasets:
 
         # Plot the decision boundary. For that, we will asign a color to each
         # point in the mesh [x_min, m_max]x[y_min, y_max].
-        Z = clf.decision_function(np.c_[xx.ravel(), yy.ravel()])
+        if calibrated:
+            Z = clf.predict_proba(np.c_[xx.ravel(), yy.ravel()])[:, [1]]
+        else:
+            Z = clf.decision_function(np.c_[xx.ravel(), yy.ravel()])
 
         # Put the result into a color plot
         Z = Z.reshape(xx.shape)

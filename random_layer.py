@@ -419,6 +419,14 @@ class MLPRandomLayer(RandomLayer):
             alpha=1.0
         )
 
+    @property
+    def weights(self):
+        return self.user_components["weights"]
+
+    @property
+    def biases(self):
+        return self.user_components["biases"]
+
 
 class RBFRandomLayer(RandomLayer):
     """Wrapper for RandomLayer with alpha (mixing coefficient) set
@@ -440,6 +448,14 @@ class RBFRandomLayer(RandomLayer):
             rbf_width=rbf_width,
             alpha=0.0
         )
+
+    @property
+    def centers(self):
+        return self.user_components["centers"]
+
+    @property
+    def radii(self):
+        return self.user_components["radii"]
 
 
 class GRBFRandomLayer(RBFRandomLayer):
